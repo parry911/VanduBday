@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caption Timer</title>
+<style>
+:root { --bg:#fff7fb; --ink:#28091b; --muted:#7f3d5a; --hot:#f51f83; --line:rgba(120,12,66,.15); --card:#fff; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,'Segoe UI',sans-serif; }
+main { max-width:860px; margin:0 auto; padding:28px 16px 80px; }
+h1 { font-size:1.6rem; margin:0 0 4px; }
+.sub { color:var(--muted); margin:0 0 24px; }
+.step { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:16px; }
+.step h2 { font-size:1rem; margin:0 0 10px; }
+.step h2 span { display:inline-grid; place-items:center; width:24px; height:24px; border-radius:50%; background:var(--hot); color:#fff; font-size:.8rem; margin-right:8px; }
+textarea { width:100%; min-height:180px; border:1px solid var(--line); border-radius:10px; padding:10px; font:inherit; resize:vertical; }
+button { font:inherit; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:9px 16px; cursor:pointer; }
+button.primary { background:var(--hot); border-color:var(--hot); color:#fff; font-weight:600; }
+button:disabled { opacity:.45; cursor:default; }
+.row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+audio { width:100%; margin-top:10px; }
+.tap {
+  width:100%; margin-top:14px; padding:26px 16px; border-radius:18px;
+  font-size:1.2rem; font-weight:700; background:var(--ink); color:#fff; border:0;
+}
+.tap small { display:block; font-weight:400; opacity:.7; font-size:.85rem; margin-top:6px; }
+.now { margin-top:14px; padding:14px; border-radius:12px; background:#ffeaf4; }
+.now .lbl { font-size:.72rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); }
+.now .txt { font-size:1.1rem; font-weight:600; min-height:1.5em; }
+ol { margin:0; padding-left:0; list-style:none; max-height:360px; overflow:auto; border:1px solid var(--line); border-radius:10px; }
+li { display:flex; gap:10px; padding:7px 10px; border-bottom:1px solid var(--line); }
+li:last-child { border-bottom:0; }
+li .t { width:64px; flex:none; font-variant-numeric:tabular-nums; color:var(--muted); }
+li.done .t { color:var(--hot); font-weight:600; }
+li.cur { background:#ffeaf4; }
+li.playing { background:#fff1c9; }
+.hint { color:var(--muted); font-size:.88rem; margin:8px 0 0; }
+.preview { margin-top:12px; min-height:48px; display:grid; place-items:center; background:#1a0a12; color:#e8b960; border-radius:999px; font-style:italic; padding:10px 20px; text-align:center; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg:#170910; --ink:#fbe9f1; --muted:#d59ab4; --line:rgba(255,180,210,.18); --card:#221019; }
+  :root:not([data-theme="light"]) .now, :root:not([data-theme="light"]) li.cur { background:#3a1428; }
+  :root:not([data-theme="light"]) li.playing { background:#3a3014; }
+  :root:not([data-theme="light"]) textarea, :root:not([data-theme="light"]) button:not(.primary):not(.tap) { background:#2b1420; color:var(--ink); }
+  :root:not([data-theme="light"]) .tap { background:#fbe9f1; color:#170910; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Caption timer</h1>
+  <p class="sub">Paste your lines, play the song, tap as each line starts. It saves a <b>lyrics.js</b> file that the birthday site picks up automatically.</p>
+
+  <div class="step">
+    <h2><span>1</span>Pick the song</h2>
+    <input type="file" id="file" accept="audio/*">
+    <p class="hint">Choose <b>assets/hai_junoon.mp3</b> from the site folder.</p>
+    <audio id="audio" controls></audio>
+  </div>
+
+  <div class="step">
+    <h2><span>2</span>Paste your lines</h2>
+    <textarea id="lines" placeholder="One line per row. Blank rows are skipped."></textarea>
+    <div class="row" style="margin-top:10px">
+      <button id="load" class="primary">Use these lines</button>
+      <span class="hint" id="count"></span>
+    </div>
+  </div>
+
+  <div class="step">
+    <h2><span>3</span>Tap along</h2>
+    <div class="row">
+      <button id="start" class="primary" disabled>Start from the beginning</button>
+      <button id="undo" disabled>Undo last tap</button>
+    </div>
+    <div class="now"><div class="lbl">Tap when this line starts</div><div class="txt" id="nextLine">—</div></div>
+    <button class="tap" id="tap" disabled>TAP<small>or press the spacebar</small></button>
+    <p class="hint">Undo steps back one line and rewinds the song 3 seconds. Leave the last few lines untapped if you want them skipped.</p>
+    <ol id="list" style="margin-top:12px"></ol>
+  </div>
+
+  <div class="step">
+    <h2><span>4</span>Check it, then save</h2>
+    <div class="row">
+      <button id="preview" disabled>Preview from the start</button>
+      <label class="row" style="gap:6px">Shift all timings
+        <input type="number" id="offset" value="0" step="0.1" style="width:80px"> s
+      </label>
+      <button id="apply" disabled>Apply shift</button>
+    </div>
+    <div class="preview" id="pv">♪</div>
+    <div class="row" style="margin-top:14px">
+      <button id="save" class="primary" disabled>Download lyrics.js</button>
+    </div>
+    <p class="hint">Put the downloaded <b>lyrics.js</b> inside the site's <b>assets</b> folder (next to hai_junoon.mp3). If a line comes in late, set a small negative shift like -0.3 and apply it.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const audio = document.getElementById('audio');
+  const listEl = document.getElementById('list');
+  const nextEl = document.getElementById('nextLine');
+  const btn = id => document.getElementById(id);
+  let lines = [], times = [], idx = 0, tapping = false, previewing = false;
+
+  btn('file').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) { audio.src = URL.createObjectURL(f); ready(); }
+  });
+
+  btn('load').addEventListener('click', () => {
+    lines = btn('lines').value.split('\n').map(s => s.trim()).filter(Boolean);
+    times = new Array(lines.length).fill(null); idx = 0;
+    btn('count').textContent = lines.length + ' lines ready';
+    render(); ready();
+  });
+
+  function ready() {
+    const ok = lines.length && audio.src;
+    btn('start').disabled = !ok;
+  }
+
+  function fmt(t) { if (t == null) return '—'; const m = Math.floor(t / 60); return m + ':' + (t % 60).toFixed(1).padStart(4, '0'); }
+
+  function render() {
+    listEl.innerHTML = '';
+    lines.forEach((l, i) => {
+      const li = document.createElement('li');
+      if (times[i] != null) li.classList.add('done');
+      if (i === idx && tapping) li.classList.add('cur');
+      li.innerHTML = '<span class="t"></span><span class="l"></span>';
+      li.querySelector('.t').textContent = fmt(times[i]);
+      li.querySelector('.l').textContent = l;
+      listEl.appendChild(li);
+    });
+    nextEl.textContent = lines[idx] || (lines.length ? 'All done. Preview it below.' : '—');
+    const any = times.some(t => t != null);
+    btn('undo').disabled = !tapping || idx === 0;
+    btn('tap').disabled = !tapping || idx >= lines.length;
+    btn('preview').disabled = !any; btn('save').disabled = !any; btn('apply').disabled = !any;
+    const cur = listEl.children[idx]; if (cur && tapping) cur.scrollIntoView({ block: 'nearest' });
+  }
+
+  btn('start').addEventListener('click', () => {
+    times = new Array(lines.length).fill(null); idx = 0; tapping = true; previewing = false;
+    audio.currentTime = 0; audio.play(); render(); btn('tap').focus();
+  });
+
+  function tap() {
+    if (!tapping || idx >= lines.length) return;
+    times[idx] = +audio.currentTime.toFixed(2); idx++;
+    if (idx >= lines.length) tapping = false;
+    render();
+  }
+  btn('tap').addEventListener('click', tap);
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && tapping && document.activeElement.tagName !== 'TEXTAREA') { e.preventDefault(); tap(); }
+  });
+
+  btn('undo').addEventListener('click', () => {
+    if (idx === 0) return;
+    idx--; times[idx] = null;
+    audio.currentTime = Math.max(0, (idx > 0 && times[idx - 1] != null ? times[idx - 1] : audio.currentTime) - 3);
+    render();
+  });
+
+  function cues() {
+    const out = [];
+    lines.forEach((l, i) => { if (times[i] != null) out.push({ t: times[i], text: l }); });
+    return out.sort((a, b) => a.t - b.t);
+  }
+
+  btn('apply').addEventListener('click', () => {
+    const d = parseFloat(btn('offset').value) || 0;
+    times = times.map(t => t == null ? t : Math.max(0, +(t + d).toFixed(2)));
+    btn('offset').value = 0; render();
+  });
+
+  btn('preview').addEventListener('click', () => {
+    tapping = false; previewing = true; audio.currentTime = 0; audio.play(); render();
+  });
+  audio.addEventListener('timeupdate', () => {
+    if (!previewing) return;
+    const c = cues(), t = audio.currentTime; let text = '♪', at = -1;
+    c.forEach((x, i) => { const end = Math.min(c[i + 1] ? c[i + 1].t : x.t + 8, x.t + 8); if (t >= x.t && t < end + 1.2) { text = x.text; at = i; } });
+    btn('pv').textContent = text;
+    [...listEl.children].forEach((li, i) => li.classList.toggle('playing', lines[i] === text && times[i] != null && times[i] <= t));
+  });
+
+  btn('save').addEventListener('click', () => {
+    const body = '// Made with the caption timer. The birthday site reads this automatically.\nwindow.SITE_LYRICS = ' + JSON.stringify(cues(), null, 1) + ';\n';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([body], { type: 'text/javascript' }));
+    a.download = 'lyrics.js'; a.click();
+  });
+})();
+</script>
+</body>
+</html>
