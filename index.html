@@ -2163,6 +2163,22 @@ body.bonus-open .lyric-bar { display: none !important; }
 @keyframes cue-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(7px); } }
 @media (max-width: 620px) { .cue-note { font-size: .9rem; padding: 9px 16px; } .hero .scroll-cue { bottom: 18px; } }
 
+.shoot-star { position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; color: #f51f83; font-size: 2.2rem; filter: drop-shadow(0 0 14px rgba(245,31,131,.7)); }
+.wish-note { position: fixed; left: 50%; top: 26%; z-index: 10000; white-space: normal; max-width: 86vw; text-align: center; }
+/* ═══════ midnight lock ═══════ */
+.gift-lock { position: fixed; inset: 0; z-index: 100005; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; background: radial-gradient(circle at 50% 45%, #3a1427, #1a0a12 70%); color: #fff; transition: opacity .8s ease; }
+.gift-lock[hidden] { display: none; }
+.gift-lock.leaving { opacity: 0; pointer-events: none; }
+.gift-lock.nope { animation: lock-shake .45s ease; }
+@keyframes lock-shake { 20% { transform: translateX(-10px); } 40% { transform: translateX(9px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(4px); } }
+.lock-tag { font: 600 .72rem var(--sans); letter-spacing: .2em; text-transform: uppercase; color: #e8b960; }
+.lock-title { font-family: var(--serif); font-style: italic; font-weight: 700; font-size: clamp(2rem, 6vw, 3.4rem); margin: 14px 0 8px; }
+.lock-text { font-family: var(--serif); font-style: italic; font-size: clamp(1.05rem, 2.4vw, 1.35rem); max-width: 460px; color: rgba(255,255,255,.88); line-height: 1.6; }
+.lock-count { font: 600 clamp(2.6rem, 10vw, 5rem) var(--sans); letter-spacing: .04em; color: #f5d998; margin-top: 26px; font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(232,185,96,.35); }
+.lock-sub { font: 500 .7rem var(--sans); letter-spacing: .2em; text-transform: uppercase; color: rgba(232,185,96,.7); margin-top: 4px; }
+.lock-note { margin-top: 28px; max-width: 420px; font: 400 .98rem/1.6 var(--sans); color: rgba(255,255,255,.8); }
+.lock-note b { color: #f5d998; }
+
 /* ═══════ fixes + hand-holding guide ═══════ */
 @media (max-width: 900px) {
   .growth-head { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -2231,9 +2247,18 @@ body.bonus-open .lyric-bar { display: none !important; }
   <div class="gift-content">
     <div class="gift-tag">october 7</div>
     <div class="gift-text">because I got no money right now… here's my attempt at a website for you as a gift</div>
-    <div class="gift-cta">tap anywhere on the screen to unwrap</div>
+    <div class="gift-cta" id="giftCta">tap anywhere on the screen to unwrap</div>
     <div class="gift-sound">🔊 turn your volume up first</div>
   </div>
+</div>
+
+<div class="gift-lock" id="giftLock" hidden>
+  <div class="lock-tag">october 7 &middot; 12:00 am</div>
+  <div class="lock-title">Nice try, Vandu. 😏</div>
+  <div class="lock-text">Your present is wrapped and waiting, but it doesn't open until midnight.</div>
+  <div class="lock-count" id="lockCount">--:--:--</div>
+  <div class="lock-sub">hours &middot; minutes &middot; seconds</div>
+  <div class="lock-note">Come back to this same link after 12. Or just leave this page open and it will unlock by itself.<br>Best on a <b>laptop</b>, with the <b>sound up</b> 🔊</div>
 </div>
 
 <!-- CURSOR -->
@@ -2261,9 +2286,9 @@ body.bonus-open .lyric-bar { display: none !important; }
 <section class="hero section">
   <div class="garland" id="garland" aria-hidden="true"></div>
   <div class="hero-orb"></div>
-  <div class="draggable" id="heartA">&#9733;<span class="drag-hint">drag me</span></div>
+  <div class="draggable" id="heartA">&#9733;<span class="drag-hint">throw me ✦</span></div>
   <div class="draggable" id="heartB">&#10023;</div>
-  <div class="draggable" id="heartC">&#10022;<span class="drag-hint">drag me</span></div>
+  <div class="draggable" id="heartC">&#10022;<span class="drag-hint">throw me ✦</span></div>
   <div class="draggable" id="heartD">&#9733;</div>
   <div class="hero-content">
     <div class="reveal">
@@ -2639,10 +2664,42 @@ body.bonus-open .lyric-bar { display: none !important; }
 (function(){
 'use strict';
 
+/* ──────── MIDNIGHT LOCK: opens 7 Oct 2026, 00:00 IST. Add ?peek to the link to skip it. ──────── */
+(function midnightLock() {
+  const OPEN_AT = Date.UTC(2026, 9, 6, 18, 30, 0); // = 7 Oct 00:00 India time
+  const lock = document.getElementById('giftLock');
+  const peek = /[?&#]peek\b/.test(location.search + location.hash);
+  const locked = () => !peek && Date.now() < OPEN_AT;
+  window.__giftLocked = locked;
+  if (!lock || !locked()) return;
+  lock.hidden = false;
+  const realTitle = document.title; document.title = '🎁 Not yet, Vandu';
+  const count = document.getElementById('lockCount');
+  const pad = n => String(n).padStart(2, '0');
+  const tick = () => {
+    const ms = OPEN_AT - Date.now();
+    if (ms <= 0) {
+      clearInterval(iv);
+      count.textContent = '00:00:00';
+      lock.querySelector('.lock-title').textContent = 'It\'s time! 🎉';
+      lock.querySelector('.lock-text').textContent = 'Happy birthday, Vandu. Your present is ready.';
+      document.title = realTitle;
+      setTimeout(() => { lock.classList.add('leaving'); setTimeout(() => lock.remove(), 900); }, 2200);
+      return;
+    }
+    const t = Math.floor(ms / 1000);
+    count.textContent = pad(Math.floor(t / 3600)) + ':' + pad(Math.floor(t / 60) % 60) + ':' + pad(t % 60);
+  };
+  const iv = setInterval(tick, 1000); tick();
+  lock.addEventListener('click', () => { lock.classList.remove('nope'); void lock.offsetWidth; lock.classList.add('nope'); });
+})();
+
 /* ──────── GIFT WRAP UNWRAP ──────── */
 const giftWrap = document.getElementById('giftWrap');
 if (giftWrap) {
+  if (window.matchMedia('(pointer: fine)').matches) { const c = document.getElementById('giftCta'); if (c) c.textContent = 'click anywhere on the screen to unwrap'; }
   giftWrap.addEventListener('click', () => {
+    if (window.__giftLocked && window.__giftLocked()) return;
     if (giftWrap.classList.contains('opening')) return;
     giftWrap.classList.add('opening');
     partyPop();
@@ -2736,36 +2793,94 @@ document.querySelectorAll('.word-reveal').forEach(el => {
   io.observe(el);
 });
 
-/* ──────── DRAGGABLE HEARTS ──────── */
+/* ──────── THROWABLE STARS: fling one and it becomes a shooting star that grants a wish ──────── */
+const WISHES = [
+  'wish granted: unlimited "quick" calls',
+  'wish granted: zero cranky days (okay, maybe one)',
+  'wish granted: a year as loud as you are',
+  'wish granted: HSA today, the world tomorrow',
+  'wish granted: every dance floor is yours',
+  'wish granted: all the gossip, first-hand',
+  'wish granted: chai that never goes cold',
+  'wish granted: the best year yet'
+];
+let wishN = 0;
+function shootingStar(char, x, y, vx, vy) {
+  const sp = Math.hypot(vx, vy);
+  if (sp < 6) { vx = (Math.random() - .5) * 10; vy = -16; } // a gentle drop still flies
+  else { const k = Math.min(1, 34 / sp); vx *= k; vy *= k; }
+  const star = document.createElement('div');
+  star.className = 'shoot-star';
+  star.textContent = char;
+  document.body.appendChild(star);
+  let f = 0, rot = 0;
+  (function fly() {
+    x += vx; y += vy; vx *= .985; vy = vy * .985 + .12; rot += 14; f++;
+    star.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) rotate(${rot}deg) scale(${1 + f / 60})`;
+    if (f % 2 === 0) {
+      const p = document.createElement('span');
+      p.className = 'particle';
+      p.textContent = ['✦', '·', '✧', '★'][f % 4];
+      p.style.color = ['#f51f83', '#e8b960', '#ff8fbd', '#fff'][f % 4];
+      p.style.left = x + 'px'; p.style.top = y + 'px';
+      p.style.setProperty('--dx', `${(Math.random() - .5) * 40}px`);
+      p.style.setProperty('--dy', `${(Math.random() - .5) * 40}px`);
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 950);
+    }
+    const out = x < -60 || x > innerWidth + 60 || y < -60 || y > innerHeight + 60;
+    if (f < 70 && !out) return requestAnimationFrame(fly);
+    star.remove();
+    if (!out) for (let i = 0; i < 14; i++) {
+      const p = document.createElement('span');
+      p.className = 'particle'; p.textContent = i % 2 ? '✦' : '★';
+      p.style.color = ['#f51f83', '#e8b960', '#ff8fbd'][i % 3];
+      p.style.left = x + 'px'; p.style.top = y + 'px';
+      p.style.setProperty('--dx', `${Math.cos(i / 14 * 6.28) * 90}px`);
+      p.style.setProperty('--dy', `${Math.sin(i / 14 * 6.28) * 90}px`);
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 950);
+    }
+    try { sfx('pop'); } catch (_) {}
+  })();
+  const note = document.createElement('div');
+  note.className = 'pop-note wish-note';
+  note.textContent = WISHES[wishN++ % WISHES.length];
+  document.body.appendChild(note);
+  setTimeout(() => note.remove(), 2700);
+}
 for (const el of document.querySelectorAll('.draggable')) {
-  let dragging = false, sx = 0, sy = 0;
+  let dragging = false, sx = 0, sy = 0, trail = [];
   const start = e => {
     dragging = true;
     el.setPointerCapture(e.pointerId);
-    sx = e.clientX; sy = e.clientY;
+    sx = e.clientX; sy = e.clientY; trail = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
     el.style.transition = 'none';
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (_) {}
   };
   const move = e => {
     if (!dragging) return;
+    trail.push({ x: e.clientX, y: e.clientY, t: performance.now() });
+    if (trail.length > 8) trail.shift();
     el.style.transform = `translate(${e.clientX-sx}px,${e.clientY-sy}px) rotate(${(e.clientX-sx)/8}deg) scale(1.25)`;
   };
   const end = e => {
     if (!dragging) return;
     dragging = false;
-    el.style.transition = 'transform .65s cubic-bezier(.2,.9,.2,1)';
-    el.style.transform = 'translate(0,0) rotate(0deg) scale(1)';
-    for (let i = 0; i < 9; i++) {
-      const p = document.createElement('span');
-      p.className = 'particle';
-      p.textContent = i % 3 === 0 ? '✦' : '★';
-      p.style.color = ['#f51f83', '#e8b960', '#ff8fbd'][i % 3];
-      p.style.left = e.clientX + 'px';
-      p.style.top = e.clientY + 'px';
-      p.style.setProperty('--dx', `${(Math.random()-.5)*180}px`);
-      p.style.setProperty('--dy', `${-30-Math.random()*140}px`);
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 950);
-    }
+    const a = trail[0], b = { x: e.clientX, y: e.clientY, t: performance.now() };
+    const dt = Math.max(16, b.t - a.t) / 16.7; // in frames
+    const vx = (b.x - a.x) / dt, vy = (b.y - a.y) / dt;
+    // the star leaves its spot as a shooting star, then quietly grows back
+    el.style.transition = 'none';
+    el.style.transform = 'translate(0,0) scale(0)';
+    el.style.opacity = '0';
+    shootingStar(el.firstChild.textContent, e.clientX, e.clientY, vx, vy);
+    try { sfx('whoosh'); } catch (_) {}
+    setTimeout(() => {
+      el.style.transition = 'transform .7s cubic-bezier(.34,1.56,.64,1), opacity .5s';
+      el.style.transform = 'translate(0,0) scale(1)';
+      el.style.opacity = '1';
+    }, 1800);
   };
   el.addEventListener('pointerdown', start);
   el.addEventListener('pointermove', move);
@@ -3863,6 +3978,8 @@ const mainVidIO = new IntersectionObserver(entries => {
 
 /* ──────── THE GUIDE: pink "👆 do this" bubbles next to every feature ──────── */
 const coaches = [];
+const FINE = window.matchMedia('(pointer: fine)').matches; // laptop / desktop
+const say = t => !FINE ? t : t.replace(/\bTap\b/g, 'Click').replace(/\btap\b/g, 'click');
 function layerOf(el) { return el.closest('#bonus') ? 'bonus' : el.closest('#finale') ? 'finale' : 'main'; }
 function activeLayer() {
   if (document.getElementById('giftWrap') || document.querySelector('.welcome')) return 'none';
@@ -3873,7 +3990,7 @@ function coach(el, text, o = {}) {
   const node = document.createElement('div');
   node.className = 'coach' + (o.comic ? ' comic' : '');
   node.innerHTML = '<span class="hand"></span><span></span>';
-  node.lastChild.textContent = text;
+  node.lastChild.textContent = say(text);
   document.body.appendChild(node);
   const c = { el, node, o, done: false, layer: layerOf(el), born: performance.now() };
   c.finish = () => { if (c.done) return; c.done = true; node.classList.remove('on'); setTimeout(() => node.remove(), 400); };
@@ -3916,7 +4033,7 @@ function showWelcome() {
     <h3>Hi Vandu! Quick guide ✦</h3>
     <ol>
       <li>Keep your <b>sound on</b> 🔊 there's music.</li>
-      <li>Move down the page <b>slowly</b>, with your thumb.</li>
+      <li><b>Scroll</b> down the page <b>slowly</b> ${FINE ? '(use the trackpad or the mouse wheel)' : '(swipe up with your thumb)'}.</li>
       <li>Whenever you see a pink bubble with a 👆 hand, do what it says.</li>
       <li>The thing at the very end is the best part. Don't skip it!</li>
     </ol>
@@ -3927,12 +4044,13 @@ function showWelcome() {
   const close = () => { w.classList.remove('on'); setTimeout(() => { w.remove(); kickCoaches(); }, 400); };
   w.querySelector('button').addEventListener('click', close);
 }
-giftWrap?.addEventListener('click', () => setTimeout(showWelcome, 2600), { once: true });
+let welcomed = false;
+giftWrap?.addEventListener('click', () => { if (welcomed || !giftWrap.classList.contains('opening')) return; welcomed = true; setTimeout(showWelcome, 2600); });
 
 // main page
 const firstBalloon = document.querySelector('#bouquet .pop-balloon');
 const balloonCoach = coach(firstBalloon, 'Tap a balloon to pop it', { doneEl: $('bouquet') });
-coach($('heartA'), 'Put your finger on this star and drag it', { place: 'below', showIf: () => balloonCoach && balloonCoach.done });
+coach($('heartA'), FINE ? 'Click this star, drag it fast and let go' : 'Put your finger on this star, swipe it fast and let go', { place: 'below', showIf: () => balloonCoach && balloonCoach.done });
 coach(vbtn('danceVideo'), 'Tap here to hear this video');
 coach(vbtn('restaurantVideo'), 'Tap here to hear this video');
 coach(document.querySelector('.expr-images'), 'Keep moving down slowly and watch her face change', {
@@ -3945,7 +4063,7 @@ coach(musicToggle, 'This round button turns the music on and off', {
 // finale (re-armed every time it opens)
 function armFinaleCoaches() {
   coaches.filter(c => c.layer === 'finale').forEach(c => c.finish());
-  coach(blowBtn, 'Press and HOLD this button. Don\'t let go until it fills up', { place: 'above', doneOn: 'never', doneIf: () => blown, delay: 1800 });
+  coach(blowBtn, FINE ? 'Click and HOLD the mouse button on this. Don\'t let go until it fills up' : 'Press and HOLD this button. Don\'t let go until it fills up', { place: 'above', doneOn: 'never', doneIf: () => blown, delay: 1800 });
   coach($('toBonus'), 'Tap the blue button', { comic: true, showIf: () => interruptEl.classList.contains('on') && getComputedStyle($('toBonus')).opacity > .6 });
 }
 easterEgg?.addEventListener('click', armFinaleCoaches);
