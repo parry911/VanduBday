@@ -1360,6 +1360,7 @@ body.finale-open .lyric-bar { display: none !important; }
   display: block;
   background: linear-gradient(180deg, #fff3d1 0%, #f5d998 35%, #ff8fbd 70%, #f51f83 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  padding: .04em .1em .2em; margin: -.04em -.1em -.2em; /* room for the tails of p and y, which were being cut off */
   opacity: 0;
   transform: translateY(90px) scale(.6) rotate(-4deg);
   filter: blur(10px);
@@ -2171,6 +2172,7 @@ html body button, html body a, html body [role="button"], html body .gift-wrap, 
 html body .draggable { cursor: grab !important; }
 html body .draggable:active { cursor: grabbing !important; }
 .cursor-dot, .cursor-glow { display: none !important; }
+.hero h1, .hero-sub, .finale-title { -webkit-user-select: none; user-select: none; }
 /* ═══════ midnight lock ═══════ */
 .gift-lock { position: fixed; inset: 0; z-index: 100005; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; background: radial-gradient(circle at 50% 45%, #3a1427, #1a0a12 70%); color: #fff; transition: opacity .8s ease; }
 .gift-lock[hidden] { display: none; }
@@ -2775,7 +2777,7 @@ const io = new IntersectionObserver(entries => {
       io.unobserve(e.target);
     }
   }
-}, { threshold: 0, rootMargin: '0px 0px 12% 0px' });
+}, { threshold: 0, rootMargin: '0px 0px 35% 0px' });
 document.querySelectorAll('.reveal').forEach(e => io.observe(e));
 
 /* ──────── WORD-BY-WORD REVEAL ──────── */
@@ -3503,7 +3505,7 @@ document.getElementById('bBoom').addEventListener('click', () => {
 // reveal comic panels as Arya's page scrolls
 const bonusIO = new IntersectionObserver(entries => {
   for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); bonusIO.unobserve(e.target); }
-}, { root: bonus, threshold: 0, rootMargin: '0px 0px 12% 0px' });
+}, { root: bonus, threshold: 0, rootMargin: '0px 0px 35% 0px' });
 bonus.querySelectorAll('.b-rv').forEach(el => bonusIO.observe(el));
 
 /* ──────── ARYA: videos play only while on screen ──────── */
