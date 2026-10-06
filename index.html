@@ -2165,6 +2165,10 @@ body.bonus-open .lyric-bar { display: none !important; }
 
 .shoot-star { position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; color: #f51f83; font-size: 2.2rem; filter: drop-shadow(0 0 14px rgba(245,31,131,.7)); }
 .wish-note { position: fixed; left: 50%; top: 26%; z-index: 10000; white-space: normal; max-width: 86vw; text-align: center; }
+/* the custom pointer must sit above every overlay (guide card, countdown, finale, Arya's page) */
+.cursor-dot { z-index: 2147483647 !important; }
+.cursor-glow { z-index: 2147483646 !important; }
+.welcome, .welcome button, .gift-lock { cursor: inherit; }
 /* ═══════ midnight lock ═══════ */
 .gift-lock { position: fixed; inset: 0; z-index: 100005; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; background: radial-gradient(circle at 50% 45%, #3a1427, #1a0a12 70%); color: #fff; transition: opacity .8s ease; }
 .gift-lock[hidden] { display: none; }
