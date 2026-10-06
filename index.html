@@ -2253,12 +2253,12 @@ body.bonus-open .lyric-bar { display: none !important; }
 </div>
 
 <div class="gift-lock" id="giftLock" hidden>
-  <div class="lock-tag">october 7 &middot; 12:00 am</div>
+  <div class="lock-tag">october 6 &middot; 11:58 pm</div>
   <div class="lock-title">Nice try, Vandu. 😏</div>
-  <div class="lock-text">Your present is wrapped and waiting, but it doesn't open until midnight.</div>
+  <div class="lock-text">Your present is wrapped and waiting, but it doesn't open until 11:58 tonight.</div>
   <div class="lock-count" id="lockCount">--:--:--</div>
   <div class="lock-sub">hours &middot; minutes &middot; seconds</div>
-  <div class="lock-note">Come back to this same link after 12. Or just leave this page open and it will unlock by itself.<br>Best on a <b>laptop</b>, with the <b>sound up</b> 🔊</div>
+  <div class="lock-note">Come back to this same link after 11:58 pm. Or just leave this page open and it will unlock by itself.<br>Best on a <b>laptop</b>, with the <b>sound up</b> 🔊</div>
 </div>
 
 <!-- CURSOR -->
@@ -2664,9 +2664,9 @@ body.bonus-open .lyric-bar { display: none !important; }
 (function(){
 'use strict';
 
-/* ──────── MIDNIGHT LOCK: opens 7 Oct 2026, 00:00 IST. Add ?peek to the link to skip it. ──────── */
+/* ──────── MIDNIGHT LOCK: opens 6 Oct 2026, 11:58 pm IST. Add ?peek to the link to skip it. ──────── */
 (function midnightLock() {
-  const OPEN_AT = Date.UTC(2026, 9, 6, 18, 30, 0); // = 7 Oct 00:00 India time
+  const OPEN_AT = Date.UTC(2026, 9, 6, 18, 28, 0); // = 6 Oct 11:58 pm India time
   const lock = document.getElementById('giftLock');
   const peek = /[?&#]peek\b/.test(location.search + location.hash);
   const locked = () => !peek && Date.now() < OPEN_AT;
